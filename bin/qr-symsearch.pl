@@ -1,4 +1,8 @@
 #!usr/bin/perl
+
+#IST-ISS Co-op Cheng Jie Shi <cjshi@uwaterloo.ca> Jan 2013
+#Supervisor: Mike Patterson <mike.patterson@uwaterloo.ca>
+
 use strict;
 use warnings;
 use Socket;

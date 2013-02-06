@@ -2,17 +2,28 @@
 
 #IST-ISS Co-op Cheng Jie Shi <cjshi@uwaterloo.ca> Jan 2013
 #Supervisor: Mike Patterson <mike.patterson@uwaterloo.ca>
-
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
 use Socket;
 use Net::SSH qw(sshopen2);
+use vars qw/ $opt_i $opt_s $opt_e $opt_f $opt_h/;
+use Getopt::Std;
+use ConConn;
 
-my($command, @output,$ip, $host,$user,$risk,$filename);
-my $input = $ARGV[0];
-my $d1 = $ARGV[1];
-my $d2 = $ARGV[2];
+getopts('i:s:e:f:h');
 
+my($command, @output,$ip, $host,$user,$risk,$filename,%config);
+my $input = $opt_i;
+my $d1 = $opt_s;
+my $d2 = $opt_e;
+if ($opt_h){
+   print "Options: -i (IP or hostname), -s(start-date), -e(end-date), -f(config file)\n";
+   
+}else{
 if (not ($input =~ /^[0-9]/)){
    $host = $input; 
    $ip = gethostbyname($input);
@@ -25,9 +36,15 @@ if($input =~ /^[0-9]/){
     my $foo = inet_aton($input);
     $host = gethostbyaddr($foo,AF_INET) || "Unknown";
 }
+if($opt_f){
+	%config = ISSRT::ConConn::GetConfig($opt_f);
+} else {
+	%config = ISSRT::ConConn::GetConfig();
+}
 
+my $host = $config{hostname};
 $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select * from events where category = 6006 and sourceIP = '$ip'\"";
-@output = sshopen2('iss-q1-console', *READER, *WRITER, $command)|| die "ssh: $!"; 
+@output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!"; 
 
 foreach my $line (<READER>){
    chomp($line);
@@ -50,4 +67,4 @@ foreach my $line (<READER>){
 }   
 close(READER);
 close(WRITER);
-
+}

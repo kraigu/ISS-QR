@@ -20,8 +20,9 @@ my($command, @output,$ip, $host,$user,$risk,$filename,%config);
 my $input = $opt_i;
 my $d1 = $opt_s;
 my $d2 = $opt_e;
+
 if ($opt_h){
-   print "Options: -i (IP or hostname), -s(start-date), -e(end-date), -f(config file)\n";
+   print "Options: -i (IP or hostname),  -s(start-date, format:yyyy:mm:dd),  -e(end-date, format:yyyy:mm:dd),  -f(config file)\n";
    
 }else{
 if (not ($input =~ /^[0-9]/)){
@@ -43,8 +44,13 @@ if($opt_f){
 }
 
 my $host = $config{hostname};
-$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select * from events where category = 6006 and sourceIP = '$ip'\"";
-@output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!"; 
+
+if($d1 && $d2){
+   $d1 = "$d1"."-00:00:00";
+   $d2 = "$d2"."-23:59:59";
+   $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select * from events where category = 6006 and sourceIP = '$ip'\"";
+   @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";
+}
 
 foreach my $line (<READER>){
    chomp($line);

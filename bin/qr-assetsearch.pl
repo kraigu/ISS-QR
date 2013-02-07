@@ -24,9 +24,9 @@ my $d2 = $opt_e;
 my (@output,$command,%config);
 
 if($opt_h){
-  print "Options: -i (IP or hostname),  -s(start-date, format:yyyy:mm:dd),  -e(end-date, format:yyyy:mm:dd),  -f(config file)\n";
-  print "Date arguement can be one, two, or none\n";
-  print "One date sets date range to that day\n"."No dates sets date range to past three days\n"
+  print "Options: -i (source IPv4 or MAC address),  -s(start-date, format:yyyy:mm:dd),  -e(end-date, format:yyyy:mm:dd),  -f(config file)\n";
+  print "Date argument can be one, two, or none\n";
+  print "One date sets date range to that day\nNo dates sets date range to past three days\n"
 }
 else{
 if($opt_f){
@@ -82,10 +82,10 @@ elsif($ip && (!$d1) && (!$d2)){
 #time converter
 my ($mac,$start_time,$end_time,$time,$ele);
 sub converter{
-$time = $_[0]/1000;
-my @months = ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
-my ($sec, $min, $hour, $day,$month,$year) = (localtime($time))[0,1,2,3,4,5]; 
-return $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
+  $time = $_[0]/1000;
+  my @months = ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+  my ($sec, $min, $hour, $day,$month,$year) = (localtime($time))[0,1,2,3,4,5]; 
+  return $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
 }
 
 #read and print

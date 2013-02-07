@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 
-#IST-ISS Co-op Cheng Jie Shi <cjshi@uwaterloo.ca> Jan 2013
-#Supervisor: Mike Patterson <mike.patterson@uwaterloo.ca>
+# IST-ISS Co-op Cheng Jie Shi <cjshi@uwaterloo.ca> Jan 2013
+# Supervisor: Mike Patterson <mike.patterson@uwaterloo.ca>
+
 use strict;
 use warnings;
 
@@ -10,47 +11,72 @@ use lib "$FindBin::Bin/../lib";
 
 use Socket;
 use Net::SSH qw(sshopen2);
-use vars qw/ $opt_i $opt_s $opt_e $opt_f $opt_h/;
+use vars qw/ $opt_i $opt_s $opt_e $opt_f $opt_h $opt_v/;
 use Getopt::Std;
-use ConConn;
+use ISSQR;
+use Date::Manip;
 
-getopts('i:s:e:f:h');
+getopts('i:s:e:f:hv:');
 
-my($command, @output,$ip, $host,$user,$risk,$filename,%config);
-my $input = $opt_i;
-my $d1 = $opt_s;
-my $d2 = $opt_e;
+my($command,@output,$ip,$host,$queryhost,$user,$risk,$filename,%config,$debug,$d1,$d2);
+
+my $SYMCalert = 6006; # Probably very site-dependent
 
 if ($opt_h){
-   print "Options: -i (IP or hostname),  -s(start-date, format:yyyy:mm:dd),  -e(end-date, format:yyyy:mm:dd),  -f(config file)\n";
-   
-}else{
-if (not ($input =~ /^[0-9]/)){
-   $host = $input; 
-   $ip = gethostbyname($input);
-	if(defined $ip){           
-	$ip = inet_ntoa($ip);  	
-        }
-}
-if($input =~ /^[0-9]/){
-    $ip = $input;
-    my $foo = inet_aton($input);
-    $host = gethostbyaddr($foo,AF_INET) || "Unknown";
-}
-if($opt_f){
-	%config = ISSRT::ConConn::GetConfig($opt_f);
+   print "Options:\n-i (IP or hostname) - required\n-s, -e - optional start/end dates, format yyyy:mm:dd\n";
+   print "-f - optional alternate config file location\n-v - optional - set verbosity/debug level\n";
+   exit 0;
+}   
+
+$debug = 0;
+if(defined $opt_v){
+  $debug = $opt_v;
 } else {
-	%config = ISSRT::ConConn::GetConfig();
+  $debug = 1;
 }
 
-my $host = $config{hostname};
+my $input = $opt_i || die "-i argument is required\n";
 
-if($d1 && $d2){
-   $d1 = "$d1"."-00:00:00";
-   $d2 = "$d2"."-23:59:59";
-   $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select * from events where category = 6006 and sourceIP = '$ip'\"";
-   @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";
+if($opt_s){
+  $d1 = $opt_s."-00:00:00";
+} else {
+  $d1 = UnixDate("today","%Y:%m:%d-00:00:00");
 }
+if($opt_e){
+  $d2 = $opt_e."-23:59:59";
+} else {
+  $d2 = UnixDate("today","%Y:%m:%d-23:59:59");
+}
+if($debug > 1){
+  print "Dates are:\nStart $d1\nEnd $d2\n";
+}
+
+if($input =~ /^[1-2]/){ # -i argument was probably an IPv4 address
+  $ip = $input;
+  my $foo = inet_aton($input);
+  $host = gethostbyaddr($foo,AF_INET) || "Unknown";
+} else {
+  $ip = gethostbyname($input);
+  $host = $input;
+}
+
+if($debug > 0){
+  print "Input was $input\nHost was $host\nIP was $ip\n";
+}
+
+if($opt_f){
+	%config = ISSQR::GetConfig($opt_f);
+} else {
+	%config = ISSQR::GetConfig();
+}
+
+$queryhost = $config{hostname};
+
+$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select * from events where category = $SYMCalert and sourceIP = '$ip'\"";
+if($debug > 0){
+  print("Command is\n$command\n");
+}
+@output = sshopen2($queryhost, *READER, *WRITER, $command)|| die "ssh: $!";
 
 foreach my $line (<READER>){
    chomp($line);
@@ -60,17 +86,16 @@ foreach my $line (<READER>){
       $risk = substr $currline[4], 11;
       $filename = $currline[6];
       if($currline[6] =~ /SUMMARIZED DATA/){
-         $user = substr $currline[17], 6;
-         print qq("$ip" , "$host" , "$user" , "$risk", "$filename");
-         print "\n";
-      }else{
-         $user = substr $currline[18], 6;
-         print qq("$ip" , "$host" , "$user" , "$risk", "$filename");
-         print "\n";
-      }   
+        $user = substr $currline[17], 6;
+        print qq("$ip","$host","$user","$risk","$filename");
+        print "\n";
+      } else {
+        $user = substr $currline[18], 6;
+        print qq("$ip","$host","$user","$risk","$filename");
+        print "\n";
+      }  
    }
-   
 }   
+
 close(READER);
 close(WRITER);
-}

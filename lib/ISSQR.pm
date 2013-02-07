@@ -1,4 +1,4 @@
-package ISSRT::ConConn;
+package ISSQR;
 
 our @EXPORT_OK = qw(GetConfig config);
 

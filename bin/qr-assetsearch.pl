@@ -4,13 +4,10 @@
 #Supervisor: Mike Patterson <mike.patterson@uwaterloo.ca>
 use strict;
 use warnings;
-
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-
 use Net::SSH qw(sshopen2);
-use DateTime;
-use Time::Piece;
+use Date::Manip;
 use vars qw/ $opt_i $opt_s $opt_e $opt_f $opt_h/;
 use Getopt::Std;
 use ISSQR;
@@ -42,44 +39,25 @@ my $host = $config{hostname};
 if($ip && $d1 && $d2){
   $d1 = "$d1"."-00:00:00";
   $d2 = "$d2"."-23:59:59";
-  if ($ip =~ /:/){
+}elsif($ip && $d1 && (!$d2)){
+  my $temp = $d1;
+  $d1 = "$temp"."-00:00:00";
+  $d2 = "$temp"."-23:59:59";
+}elsif($ip && (!$d1) && (!$d2)){
+  $d1 = UnixDate("-3d","%Y:%m:%d-00:00:00");
+  $d2 = UnixDate("today","%Y:%m:%d-23:59:59");
+}
+
+print "Search from $d1 to $d2\n";
+ 
+if ($ip =~ /:/){
     $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select sourceIP, startTime, endTime from events where sourceMAC = '$ip'\"";
     @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";      
-  } else {
+}else{
     $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -x  \"select sourceMAC, startTime,endTime from events where sourceIP = '$ip' and sourceMAC != '00:00:00:00:00:00'\"";
     @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";
   }
-}  
-#only one date entered
-elsif($ip && $d1 && (!$d2)){
-  my $d11 = "$d1"."-23:59:59";
-  $d1 = "$d1"."-00:00:00";
-  if($ip =~ /:/){
-    $command = "/opt/qradar/bin/arielClient -start $d1 -end $d11 -x  \"select sourceIP, startTime from events where sourceMAC = '$ip'\"";
-    @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!"; 
-   } else {
-    $command = "/opt/qradar/bin/arielClient -start $d1 -end $d11 -x  \"select sourceMAC, startTime from events where sourceIP = '$ip' and sourceMAC != '00:00:00:00:00:00'\"";
-    @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";
-   }
-}
-#only ip entered, print result for past 3 days
-elsif($ip && (!$d1) && (!$d2)){
-  my $currentdate = DateTime->now;
-  my $temp= DateTime->now;
-  $currentdate = Time::Piece->strptime($currentdate, "%Y-%m-%dT%H:%M:%S");
-  $currentdate = $currentdate ->strftime("%Y:%m:%d-%H:%M:%S");
-    my $date = $temp->subtract(days => 3);
-    $date = Time::Piece->strptime($temp, "%Y-%m-%dT%H:%M:%S");
-    $date = $date ->strftime("%Y:%m:%d-%H:%M:%S");
-    if($ip =~ /:/){
-      $command = "/opt/qradar/bin/arielClient -start $date -end $currentdate -x  \"select sourceIP, startTime from events where sourceMAC = '$ip'\"";
-      @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!"; 
-    } else {
-      $command = "/opt/qradar/bin/arielClient -start $date -end $currentdate -x  \"select sourceMAC, startTime from events where sourceIP = '$ip' and sourceMAC != '00:00:00:00:00:00'\"";
-      @output = sshopen2($host, *READER, *WRITER, $command)|| die "ssh: $!";
-    }
-}
-
+  
 #time converter
 my ($mac,$start_time,$end_time,$time,$ele);
 sub converter{

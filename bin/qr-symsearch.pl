@@ -28,12 +28,7 @@ if ($opt_h){
    exit 0;
 }   
 
-$debug = 0;
-if(defined $opt_v){
-  $debug = $opt_v;
-} else {
-  $debug = 1;
-}
+$debug = $opt_v || 0;
 
 my $input = $opt_i || die "-i argument is required\n";
 

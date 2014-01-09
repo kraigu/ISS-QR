@@ -70,12 +70,13 @@ my $csv = Text::CSV->new ({binary => 1}) or die "Cannot use CSV: ".Text::CSV->er
 $csv->column_names($csv->getline(*READER));
 my $events = $csv->getline_hr_all(*READER);
 
-print "Timestamp\tUserID\tSourceIP\n";
+print "Timestamp\tUserID\tSourceIP\tLogged Payload\n";
 for my $event (@$events) {
   my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};
-  if($st && $sip){
-  	print "$st\t$userid\t$sip\n";
+  my $payload = $event->{"payload"};
+  if($st){
+  	print "$st\t$userid\t$sip\t$payload\n";
   }
   if($debug > 2){
     print "\n--- events\n";

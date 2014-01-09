@@ -18,6 +18,8 @@ use ISSQR;
 use Date::Manip;
 use Text::CSV;
 
+use Data::Dumper;
+
 getopts('i:s:e:f:hv:');
 
 my($command,@output,$queryhost,%config,$debug,$d1,$d2);
@@ -70,9 +72,16 @@ my $events = $csv->getline_hr_all(*READER);
 
 print "Timestamp\tUserID\tSourceIP\n";
 for my $event (@$events) {
-	my $st = $event->{"startTime"};
+  my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};
-	print "$st\t$userid\t$sip\n";
+  if($st && $sip){
+  	print "$st\t$userid\t$sip\n";
+  }
+  if($debug > 2){
+    print "\n--- events\n";
+    print Dumper($events);
+    print "\n--- end events\n";
+  }
 }
 
 close(READER);

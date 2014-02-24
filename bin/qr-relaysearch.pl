@@ -40,7 +40,7 @@ my $userid = $opt_i || die "user id required\n";
 if($opt_s){
   $d1 = $opt_s."-00:00:00";
 } else {
-  $d1 = UnixDate("today","%Y:%m:%d-00:00:00");
+  $d1 = UnixDate("three days ago","%Y:%m:%d-00:00:00");
 }
 if($opt_e){
   $d2 = $opt_e."-23:59:59";
@@ -60,7 +60,7 @@ if($opt_f){
 
 $queryhost = $config{hostname};
 
-$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName = '$userid'\"";
+$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName like '$userid%'\"";
 if($debug > 0){
   print("Command is\n$command\n");
 }
@@ -75,8 +75,9 @@ for my $event (@$events) {
   my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};
   my $payload = $event->{"payload"};
-  if($st){
-  	print "$st\t$userid\t$sip\t$payload\n";
+  if($sip){
+ 	  $st = scalar localtime($st / 1000);
+		print "$st\t$userid\t$sip\t$payload\n";
   }
   if($debug > 2){
     print "\n--- events\n";

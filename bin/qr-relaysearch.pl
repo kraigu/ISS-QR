@@ -17,6 +17,7 @@ use Getopt::Std;
 use ISSQR;
 use Date::Manip;
 use Text::CSV;
+use Geo::IP;
 
 use Data::Dumper;
 
@@ -59,6 +60,9 @@ if($opt_f){
 }
 
 $queryhost = $config{hostname};
+my $gipath = $config{ipcity} || die "You need to specify ipcity in your config file\n";
+my $gi = Geo::IP->open("/Users/mpatters/GeoLite/GeoLiteCity.dat", GEOIP_STANDARD);
+
 
 $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName like '$userid%'\"";
 if($debug > 0){
@@ -74,10 +78,12 @@ print "Timestamp\tUserID\tSourceIP\tLogged Payload\n";
 for my $event (@$events) {
   my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};
-  my $payload = $event->{"payload"};
+  #my $payload = $event->{"payload"};
   if($sip){
+    my $record = $gi->record_by_addr($sip);
+    my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);
  	  $st = scalar localtime($st / 1000);
-		print "$st\t$userid\t$sip\t$payload\n";
+ 		print "$st\t$userid\t$sip\t$concode / $cc3 / $city\n";
   }
   if($debug > 2){
     print "\n--- events\n";

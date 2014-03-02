@@ -16,6 +16,7 @@ use ISSQR;
 use Date::Manip;
 use Text::CSV;
 use Data::Dumper;
+use Geo::IP;
 
 getopts('i:s:e:f:hv:');
 
@@ -58,6 +59,8 @@ if($opt_f){
 }
 
 $queryhost = $config{hostname};
+my $gipath = $config{ipcity} || die "You need to specify ipcity in your config file\n";
+my $gi = Geo::IP->open("$gipath", GEOIP_STANDARD) || die "Couldn't open the GeoIP path: $!\n";
 
 $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName = '$userid'\"";
 if($debug > 0){
@@ -69,7 +72,7 @@ my $csv = Text::CSV->new ({binary => 1}) or die "Cannot use CSV: ".Text::CSV->er
 $csv->column_names($csv->getline(*READER));
 my $events = $csv->getline_hr_all(*READER);
 
-print "Timestamp\tUserID\tAssigned IP\tSource IP\n";
+print "Timestamp\t\tUserID\tAssigned IP\tSource IP\nGeo on Dest\n";
 for my $event (@$events) {
 	my $sts = $event->{"startTime"};
 	my $stn = 0;
@@ -79,7 +82,9 @@ for my $event (@$events) {
 	my $sip = $event->{"sourceIP"};
 	my $dip = $event->{"destinationIP"};
 	if($sts && $sip && $dip){
-		print "$stn\t$userid\t$sip\t$dip\n";
+		my $record = $gi->record_by_addr($dip);
+		my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);		
+		print "$stn\t$userid\t$sip\t$dip\t$concode / $cc3 / $city\n";
 	}
 	if($debug > 2){
 		print Dumper($events);

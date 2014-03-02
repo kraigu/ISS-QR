@@ -52,7 +52,6 @@ if($debug > 1){
   print "Dates are:\nStart $d1\nEnd $d2\n";
 }
 
-
 if($opt_f){
 	%config = ISSQR::GetConfig($opt_f);
 } else {
@@ -62,7 +61,6 @@ if($opt_f){
 $queryhost = $config{hostname};
 my $gipath = $config{ipcity} || die "You need to specify ipcity in your config file\n";
 my $gi = Geo::IP->open("/Users/mpatters/GeoLite/GeoLiteCity.dat", GEOIP_STANDARD);
-
 
 $command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName like '$userid%'\"";
 if($debug > 0){

@@ -17,6 +17,7 @@ use Getopt::Std;
 use ISSQR;
 use Date::Manip;
 use Text::CSV;
+use Geo::IP;
 
 use Data::Dumper;
 
@@ -40,7 +41,7 @@ my $userid = $opt_i || die "user id required\n";
 if($opt_s){
   $d1 = $opt_s."-00:00:00";
 } else {
-  $d1 = UnixDate("today","%Y:%m:%d-00:00:00");
+  $d1 = UnixDate("three days ago","%Y:%m:%d-00:00:00");
 }
 if($opt_e){
   $d2 = $opt_e."-23:59:59";
@@ -51,7 +52,6 @@ if($debug > 1){
   print "Dates are:\nStart $d1\nEnd $d2\n";
 }
 
-
 if($opt_f){
 	%config = ISSQR::GetConfig($opt_f);
 } else {
@@ -59,8 +59,10 @@ if($opt_f){
 }
 
 $queryhost = $config{hostname};
+my $gipath = $config{ipcity} || die "You need to specify ipcity in your config file\n";
+my $gi = Geo::IP->open("/Users/mpatters/GeoLite/GeoLiteCity.dat", GEOIP_STANDARD);
 
-$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName = '$userid'\"";
+$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName like '$userid%'\"";
 if($debug > 0){
   print("Command is\n$command\n");
 }
@@ -70,13 +72,16 @@ my $csv = Text::CSV->new ({binary => 1}) or die "Cannot use CSV: ".Text::CSV->er
 $csv->column_names($csv->getline(*READER));
 my $events = $csv->getline_hr_all(*READER);
 
-print "Timestamp\tUserID\tSourceIP\tLogged Payload\n";
+print "Timestamp\t\tUserID\tSourceIP\tGeoIP Lookup\n";
 for my $event (@$events) {
   my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};
-  my $payload = $event->{"payload"};
-  if($st){
-  	print "$st\t$userid\t$sip\t$payload\n";
+  #my $payload = $event->{"payload"};
+  if($sip){
+    my $record = $gi->record_by_addr($sip);
+    my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);
+ 	  $st = scalar localtime($st / 1000);
+ 		print "$st\t$userid\t$sip\t$concode / $cc3 / $city\n";
   }
   if($debug > 2){
     print "\n--- events\n";

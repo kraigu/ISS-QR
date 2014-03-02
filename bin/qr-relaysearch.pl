@@ -74,7 +74,7 @@ my $csv = Text::CSV->new ({binary => 1}) or die "Cannot use CSV: ".Text::CSV->er
 $csv->column_names($csv->getline(*READER));
 my $events = $csv->getline_hr_all(*READER);
 
-print "Timestamp\tUserID\tSourceIP\tLogged Payload\n";
+print "Timestamp\t\tUserID\tSourceIP\tGeoIP Lookup\n";
 for my $event (@$events) {
   my $st = $event->{"startTime"};
 	my $sip = $event->{"sourceIP"};

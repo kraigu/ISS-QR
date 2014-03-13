@@ -72,7 +72,7 @@ my $csv = Text::CSV->new ({binary => 1}) or die "Cannot use CSV: ".Text::CSV->er
 $csv->column_names($csv->getline(*READER));
 my $events = $csv->getline_hr_all(*READER);
 
-print "Timestamp\t\tUserID\tAssigned IP\tSource IP\nGeo on Dest\n";
+print "Timestamp\t\tUserID\tAssigned IP\tSource IP\tGeo on Dest\n";
 for my $event (@$events) {
 	my $sts = $event->{"startTime"};
 	my $stn = 0;

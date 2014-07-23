@@ -26,7 +26,9 @@ getopts('i:s:e:f:hv:');
 my($command,@output,$queryhost,%config,$debug,$d1,$d2);
 
 # QID of event: Relay Event - Event CRE
-my $qid = '6501068';
+my $rqid = '6501068';
+# Webmail login
+my $wqid = '11750971';
 
 if ($opt_h){
    print "Options:\n-i (user id) - required\n-s, -e - optional start/end dates, format yyyy:mm:dd\n";
@@ -62,7 +64,7 @@ $queryhost = $config{hostname};
 my $gipath = $config{ipcity} || die "You need to specify ipcity in your config file\n";
 my $gi = Geo::IP->open($gipath, GEOIP_STANDARD);
 
-$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where qid = $qid and userName like '$userid%'\"";
+$command = "/opt/qradar/bin/arielClient -start $d1 -end $d2 -f CSV -x \"select * from events where userName like '$userid%' and (qid = $rqid or qid = $wqid)\"";
 if($debug > 0){
   print("Command is\n$command\n");
 }

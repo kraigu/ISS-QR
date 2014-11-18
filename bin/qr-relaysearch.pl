@@ -80,10 +80,14 @@ for my $event (@$events) {
 	my $sip = $event->{"sourceIP"};
   #my $payload = $event->{"payload"};
   if($sip){
+    $st = scalar localtime($st / 1000);
     my $record = $gi->record_by_addr($sip);
-    my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);
- 	  $st = scalar localtime($st / 1000);
- 		print "$st\t$userid\t$sip\t$concode / $cc3 / $city\n";
+    if($record){
+      my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);
+  		print "$st\t$userid\t$sip\t$concode / $cc3 / $city\n";
+    } else {
+      print "$st\t$userid\t$sip\tNo record found\n";
+    }
   }
   if($debug > 2){
     print "\n--- events\n";

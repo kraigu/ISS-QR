@@ -83,8 +83,13 @@ for my $event (@$events) {
 	my $dip = $event->{"destinationIP"};
 	if($sts && $sip && $dip){
 		my $record = $gi->record_by_addr($dip);
-		my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);		
-		print "$stn\t$userid\t$sip\t$dip\t$concode / $cc3 / $city\n";
+		if($record){
+			my ($cc3,$city,$concode) = ($record->country_code3,$record->city,$record->continent_code);		
+			print "$stn\t$userid\t$sip\t$dip\t$concode / $cc3 / $city\n";
+		}
+		else{
+			print "$stn\t$userid\t$sip\t$dip\tNo record found\n";
+		}
 	}
 	if($debug > 2){
 		print Dumper($events);
